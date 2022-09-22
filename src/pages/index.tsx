@@ -1,7 +1,5 @@
 import type { NextPage } from "next";
-import Head from "next/head";
-import Image from "next/image";
-import styles from "../styles/Home.module.css";
+import Link from "next/link";
 import { trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
@@ -12,7 +10,16 @@ const Home: NextPage = () => {
   if (error) {
     return <p>{JSON.stringify(error)}</p>;
   }
-  return <div>{JSON.stringify(data)}</div>;
+  return (
+    <div>
+      {JSON.stringify(data)}
+      <br />
+      <>
+        <Link href="/login">Login</Link>
+        <Link href="/register">Register</Link>
+      </>
+    </div>
+  );
 };
 
 export default Home;
