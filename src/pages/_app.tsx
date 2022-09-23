@@ -3,19 +3,29 @@ import { loggerLink } from "@trpc/client/links/loggerLink";
 import { withTRPC } from "@trpc/next";
 import type { AppProps } from "next/app";
 import superjson from "superjson";
+import { url } from "../constant";
+import { UserContextProvider } from "../context/user.context";
 import { AppRouter } from "../server/route/app.router";
 import "../styles/globals.css";
+import { trpc } from "../utils/trpc";
 
 function MyApp({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+  const { data, error, isLoading } = trpc.useQuery(["users.me"]);
+
+  if (isLoading) {
+    return <h1>Loading User....</h1>;
+  }
+  return (
+    <UserContextProvider value={data}>
+      <main>
+        <Component {...pageProps} />
+      </main>
+    </UserContextProvider>
+  );
 }
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    const url = process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api/trpc`
-      : "http://localhost:3000/api/trpc";
-
     const links = [
       loggerLink(),
       httpBatchLink({

@@ -1,37 +1,22 @@
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import { useForm } from "react-hook-form";
-import { CreateUserInput } from "../schema/user.schema";
-import { trpc } from "../utils/trpc";
+import { useUserContext } from "../context/user.context";
+
+const LoginForm = dynamic(() => import("../components/LoginForm"), {
+  ssr: false,
+});
 
 function LoginPage() {
-  const { handleSubmit, register } = useForm<CreateUserInput>();
+  const user = useUserContext();
+
   const router = useRouter();
-
-  // const { mutate, error } = trpc.useMutation(["users.register-user"], {
-  //   onError: (error) => {},
-  //   onSuccess: () => {
-  //     router.push("/login");
-  //   },
-  // });
-  const onSubmit = (values: CreateUserInput) => {
-    // mutate(values);
-  };
+  if (user) {
+    router.push("/");
+  }
   return (
-    <>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        {/* {error && error.message} */}
-        <h1>Register</h1>
-        <input
-          type="email"
-          placeholder="johndoe@example.com"
-          {...register("email")}
-        />
-        <button type="submit">Login</button>
-      </form>
-
-      <Link href="/register">Register</Link>
-    </>
+    <div>
+      <LoginForm />
+    </div>
   );
 }
 

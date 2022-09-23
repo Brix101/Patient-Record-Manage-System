@@ -1,29 +1,45 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useUserContext } from "../context/user.context";
 import { CreateUserInput } from "../schema/user.schema";
 import { trpc } from "../utils/trpc";
 
-function RegisterPage() {
-  const user = useUserContext();
+function VerifyToken({ hash }: { hash: string }) {
+  const router = useRouter();
+  const { data, isLoading } = trpc.useQuery([
+    "users.verify-otp",
+    {
+      hash,
+    },
+  ]);
+
+  if (isLoading) {
+    return <p>Verifying...</p>;
+  }
+
+  router.push(data?.redirect.includes("login") ? "/" : data?.redirect || "/");
+  return <p>Redirect...</p>;
+}
+
+function LoginForm() {
   const { handleSubmit, register } = useForm<CreateUserInput>();
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  const { mutate, error, isLoading } = trpc.useMutation(
-    ["users.register-user"],
-    {
-      onSuccess: () => {
-        router.push("/login");
-      },
-    }
-  );
+  const { mutate, error, isLoading } = trpc.useMutation(["users.request-otp"], {
+    onError: (error) => {},
+    onSuccess: () => {
+      setSuccess(true);
+    },
+  });
+  const onSubmit = (values: CreateUserInput) => {
+    mutate({ ...values, redirect: router.asPath });
+  };
 
-  function onSubmit(values: CreateUserInput) {
-    mutate(values);
-  }
-  if (user) {
-    router.push("/");
+  const hash = router.asPath.split("#token=")[1];
+  if (hash) {
+    return <VerifyToken hash={hash} />;
   }
   return (
     <>
@@ -31,7 +47,7 @@ function RegisterPage() {
         <div className="w-full max-w-md space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-              Register an account
+              Login to an Account
             </h2>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
@@ -43,17 +59,15 @@ function RegisterPage() {
                 <span className="font-medium">{error.message}</span>
               </div>
             )}
-            <div className="-space-y-px rounded-md shadow-sm">
-              <div>
-                <input
-                  type="text"
-                  autoComplete="name"
-                  required
-                  className="relative block w-full my-2 rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Name"
-                  {...register("name")}
-                />
+            {success && (
+              <div
+                className="p-4 mb-4 text-sm text-blue-700 bg-blue-100 rounded-lg dark:bg-blue-200 dark:text-blue-800"
+                role="alert"
+              >
+                <span className="font-medium">Check Your Email!</span>
               </div>
+            )}
+            <div className="-space-y-px rounded-md shadow-sm">
               <div>
                 <input
                   type="email"
@@ -89,7 +103,7 @@ function RegisterPage() {
                     />
                   </svg>
                 ) : (
-                  <>Register</>
+                  <>Sign in</>
                 )}
               </button>
             </div>
@@ -97,15 +111,15 @@ function RegisterPage() {
           <div className="w-full flex justify-between">
             <Link
               className=" font-bold uppercase px-3 py-1 text-xs  mr-1 mb-1 ease-linear transition-all duration-150 hover:underline hover:text-blue-500"
-              href="/login"
+              href="/register"
             >
-              Login
+              Register
             </Link>
             <Link
               className=" font-bold uppercase px-3 py-1 text-xs  mr-1 mb-1 ease-linear transition-all duration-150 hover:underline hover:text-blue-500"
-              href="/login"
+              href="/register"
             >
-              Login
+              Register
             </Link>
           </div>
         </div>
@@ -114,4 +128,4 @@ function RegisterPage() {
   );
 }
 
-export default RegisterPage;
+export default LoginForm;
